@@ -1,9 +1,10 @@
 #!/bin/bash
+readonly DATABASES="Databases";
 
 create_DB()
 {
 	read -p "Database name: " db
-	if test -d $db
+	if test -d $DATABASES/$db
 	then echo "Couldn't create database.Database already exits!"
 	else
 		mkdir $db
@@ -26,6 +27,7 @@ drop_DB()
 	echo "Database not found"
 	fi
 }
+ cd $DATABASES
   while true
   do
   echo -e  "\n+---------Main Menu-------------+"
@@ -48,6 +50,7 @@ drop_DB()
 	;;
   5);;
   6)
+	cd ..
 	break
 	;;
   *)
