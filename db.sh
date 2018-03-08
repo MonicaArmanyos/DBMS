@@ -1,10 +1,11 @@
 #!/bin/bash
-readonly DATABASES="Databases";
+
+readonly DBMS_DIR="/home/iman/DBMS"
 
 create_DB()
 {
 	read -p "Database name: " db
-	if test -d $DATABASES/$db
+	if test -d $DBMS_DIR/$db
 	then echo "Couldn't create database.Database already exits!"
 	else
 		mkdir $db
@@ -16,6 +17,7 @@ create_DB()
 		fi
 	fi
 }
+
 drop_DB()
 {
 	read -p "Database name: " db
@@ -27,7 +29,7 @@ drop_DB()
 	echo "Database not found"
 	fi
 }
- cd $DATABASES
+cd $DBMS_DIR
   while true
   do
   echo -e  "\n+---------Main Menu-------------+"
@@ -57,3 +59,40 @@ drop_DB()
 	echo "Invalid option!"
   esac
   done
+
+######################
+
+#create_table(){}
+
+
+#alter_table(){}
+
+
+show_DBs(){
+
+	
+	ls $DBMS_DIR > $DBMS_DIR/.databases
+	#count=0
+	databases=`awk ' { print $1 } ' $DBMS_DIR/.databases`
+	#echo $databases
+	for db in $databases
+	do
+		#test -d $DBMS_DIR/$db && echo "$((++count))- $db"
+		test -d $DBMS_DIR/$db && echo "$db"
+	done
+}
+
+
+select_DB(){
+
+	selected_database=$1
+	cd $DBMS_DIR/$selected_database
+	echo "Database changed to $selected_database" 
+}
+
+
+#delete_record(){}
+
+show_DBs
+read db
+select_DB $db
