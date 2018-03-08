@@ -42,8 +42,9 @@ add_column(){
 	table_name=$1
 	
 	read -p "Column name: " col_name
+	read -p "Data type: " data_type
 	read -p "Constrains? 'unique/not-null/default=value'(type constrains separted by spaces): " constrains	
-	echo "$col_name $constrains" >> $current_DB/.$table_name
+	echo "$col_name $data_type $constrains" >> $current_DB/.$table_name
 
 }
 
@@ -55,7 +56,47 @@ add_primary(){
 	table_name=$1
 	
 	read -p "Primary key name: " col_name
-	echo "$col_name pimary_key" > $current_DB/.$table_name 
+	read -p "Data type: " data_type
+	echo "$col_name $data_type pimary_key" > $current_DB/.$table_name 
+}
+
+
+###############################################
+
+edit_column(){
+
+	table_name=$1
+
+	read -p "Column: " col_name
+	
+	if grep -q "^$col_name.*$" ".$table_name"
+	then
+		read -p "Column name: " new_col_name
+		read -p "Data type: " data_type
+		read -p "Constrains? 'unique/not-null/default=value'(type constrains separted by spaces): " constrains	
+		sed -i "s/^$col_name.*$/$new_col_name $data_type $constrains/g" ".$table_name"	
+		test $? == 0 && echo "Column changed successfully"		 
+		
+	else
+		echo "column doesn't exist"
+	fi
+}
+
+###############################################
+
+drop_column(){
+
+	table_name=$1
+	read -p "Column: " col_name
+
+	if grep -q "^$col_name.*$" ".$table_name"
+	then
+		sed -i "/$col_name/d" ".$table_name"
+		test $? == 0 && echo "Column dropped successfully"		 
+		
+	else
+		echo "column doesn't exist"
+	fi
 }
 
 ###############################################
@@ -100,8 +141,40 @@ create_table(){
 
 ###############################################
 
+alter_table(){
 
-#alter_table(){}
+	current_DB=`pwd`
+	read -p "Table: " table_name	
+	if test -f $current_DB/$table_name 
+	then
+		while true
+		do
+			echo -e  "\n+---------Table Menu-------------+"
+			echo "| 1. Edit column                |"
+			echo "| 2. Drop column                |"
+			echo "| 3. Back                       |"
+			echo "+-------------------------------+"
+			read -p "Enter Choice: " n
+			case $n in
+			1) 
+				edit_column $table_name 
+				;;
+			2)
+				drop_column $table_name 
+				;;
+			3)
+				break
+				;;
+			*)
+				echo "Invalid option!"
+			esac
+		done	
+	else
+		echo "Table doen't exist"
+	fi
+		
+
+}
 
 ###############################################
 
