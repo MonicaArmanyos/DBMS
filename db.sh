@@ -36,7 +36,27 @@ drop_DB()
 
 ###############################################
 
-#add_column(){}
+add_column(){
+
+	current_DB=`pwd`
+	table_name=$1
+	
+	read -p "Column name: " col_name
+	read -p "Constrains? 'unique/not-null/default=value'(type constrains separted by spaces): " constrains	
+	echo "$col_name $constrains" >> $current_DB/.$table_name
+
+}
+
+###############################################
+
+add_primary(){
+
+	current_DB=`pwd`
+	table_name=$1
+	
+	read -p "Primary key name: " col_name
+	echo "$col_name pimary_key" > $current_DB/.$table_name 
+}
 
 ###############################################
 
@@ -54,24 +74,28 @@ create_table(){
 		touch $current_DB/.$table_name
 		test -f $current_DB/$table_name && echo "tbale $table_name created" || state=0
 	fi
-	test $state == 1 && while true
-	do
-		echo -e  "\n+---------Table Menu-------------+"
-		echo "| 1. Add column                 |"
-		echo "| 2. Back                       |"
-		echo "+-------------------------------+"
-		read -p "Enter Choice: " n
-		case $n in
-		1)
-			add_column
-			;;
-		2)
-			break
-			;;
-		*)
-			echo "Invalid option!"
-		esac
-	done	
+	if test $state == 1 
+	then 
+		add_primary $table_name
+		while true
+		do
+			echo -e  "\n+---------Table Menu-------------+"
+			echo "| 1. Add column                 |"
+			echo "| 2. Back                       |"
+			echo "+-------------------------------+"
+			read -p "Enter Choice: " n
+			case $n in
+			1) 
+				add_column $table_name 
+				;;
+			2)
+				break
+				;;
+			*)
+				echo "Invalid option!"
+			esac
+		done
+	fi	
 }
 
 ###############################################
