@@ -137,7 +137,7 @@ alter_table(){
 
 	current_DB=`pwd`
 	read -p "Table: " table_name	
-	if test -f $current_DB/$table_name 
+	if test -f $table_name 
 	then
 		while true
 		do
@@ -169,29 +169,37 @@ alter_table(){
 }
 
 ###############################################
+format_menu()
+{
+                 echo "+------format------+"
+                 echo "|1.CSV             |"
+                 echo "|2.Web page        |"
+                 echo "+------------------+"
 
+}
 select_record()
 {
-	 read -p "Table name: " table
+	read -p "Table name: " table
 	if test -f $table 
 	then
+		
 		awk 'BEGIN { FS="|";print "\n+-------------Select--------------+";j=1 } { if(NR == 2) {
-		 for(i = 2; i < NF; i++) { 
+		for(i = 2; i < NF; i++) { 
 		print j" " $i;
 		j++;
                   }
                  } } END { print "+---------------------------------+"}' $table
-	         echo "Enter columns number: "
-		 IFS=" "  read -a fields
-		 field=""
-		 for i in ${fields[@]}
+		echo "Enter columns number: "
+		IFS=" "  read -a fields
+		field=""
+		for i in ${fields[@]}
 		 do
 		 field="$field $i "
 		 done      
                 awk 'BEGIN { FS="|";print "\n+-------------Records-------------+\n1. All";j=2 } { if(NR == 2) {
-                 for(i = 2; i < NF; i++) {
+                for(i = 2; i < NF; i++) {
 		gsub(/ /,"",$i); 
-                 print j ". where " $i  " =" ;
+                 print j ". where " $i  " matches" ;
 		 j++;
                   }
                  } } END { print "+---------------------------------+"}' $table
@@ -199,79 +207,144 @@ select_record()
 		 read -p "Enter option number: " option
                  if [ $option == 1 ]
 		 then
-                 echo "+------format------+"
-		 echo "|1.CSV             |"
-                 echo "|2.Web page        |"
-                 echo "+------------------+"
-                  read -p "Enter format number: " format
-		case $format in
-		1)
-		#cols=${fields[@]}
-             	 j=0
-		b=()
-		  for i in ${fields[@]}
-                  do
-                   b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR >= 2 && NR != 3) if($(a+1) == "       "){ print "NULL"}else{ print $(a+1)} }' $table))
-		(( j++ ))
-                  done
-
-		# b=($(awk 'BEGIN{FS="|"; OFS=","} { if(NR >= 2 && NR != 3)  print $2 }' $table))
-                # c=($(awk 'BEGIN{FS="|"; OFS=","} { if(NR >= 2 && NR != 3)  print $3 }' $table))
-		i=0 
-		rows=$(( ${#b[@]}/$j )) 
-		while test $i -lt  $rows
-		do
+                 format_menu
+                 read -p "Enter format number: " format
+			case $format in
+			1)
+			j=0
+			b=()
+			for i in ${fields[@]}
+			do
+			b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR >= 2 && NR != 3) if($(a+1) == "       "|| $(a+1) == ""  ){ print "NULL"}else{gsub(/ /,"",$(a+1)); print $(a+1)} }' $table))
+			(( j++ ))
+			done
+			i=0 
+			rows=$(( ${#b[@]}/$j )) 
+			while test $i -lt  $rows
+			do
 			m=0
 			k=i
 			while test $m -lt $j
 			do
 		 	echo -n ${b[$k]} "," 
+			
 			(( k+=$rows ))
 			(( m++ ))
 			done
-                 echo
-                  (( i++ ))
-		done
-		;;
-		2)
-		echo "<html><body><table border="1"> <tr>" > display.html
-		j=0
-                b=()
-                  for i in ${fields[@]}
-                  do
-		echo
-                   awk -va="$i" 'BEGIN{FS="|"} { if(NR == 2 )  print "<th>"$(a+1)"</th>"}' $table >> display.html
-                  done
-		 echo "</tr>" >> display.html
-
-                  for i in ${fields[@]}
-                  do
-                   b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR > 2 && NR != 3)  if($(a+1) == "       "){ print "NULL"}else{ print $(a+1)} }' $table))
-                (( j++ ))
-                  done
-                i=0
-                rows=$(( ${#b[@]}/$j ))
-                while test $i -lt  $rows
-                do
+			echo
+			(( i++ ))
+			done
+			;;
+			2)
+			echo "<html><body><table border="1"> <tr>" > ../../display.html
+			j=0
+                	b=()
+			for i in ${fields[@]}
+			do
+			echo
+			awk -va="$i" 'BEGIN{FS="|"} { if(NR == 2 )  print "<th>"$(a+1)"</th>"}' $table >> ../../display.html
+			done
+			echo "</tr>" >> ../../display.html
+			for i in ${fields[@]}
+			do
+			b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR > 2 && NR != 3)  if($(a+1) == "       " || $(a+1) == "" ){ print "NULL"}else{gsub(/ /,"",$(a+1));  print $(a+1)} }' $table))
+			(( j++ ))
+			done
+			i=0
+			rows=$(( ${#b[@]}/$j ))
+			while test $i -lt  $rows
+			do
                         m=0
                         k=i
-			echo "<tr>" >> display.html
+			echo "<tr>" >> ../../display.html
                         while test $m -lt $j
                         do
-                        echo "<td>${b[$k]}</td>" >> display.html 
+                        echo "<td>${b[$k]}</td>" >> ../../display.html 
                         (( k+=$rows ))
                         (( m++ ))
                         done
-                 echo "</tr>" >>display.html
-                  (( i++ ))
-                  done
-		echo "</table></body></html>" >> display.html
-		 xdg-open display.html
-		#awk 'BEGIN{FS="|";print "<html><body><table border="1">"}{if(NR=2) print "<tr>" print"</tr>"}END {print "</table></body><html>"}' $table > display.html
-		;;
-		*) echo "Invalid format !"
-		esac
+			echo "</tr>" >> ../../display.html
+			(( i++ ))
+			done
+			echo "</table></body></html>" >> ../../display.html
+			xdg-open ../../display.html
+			;;
+			*) echo "Invalid format !"
+			esac
+		
+		else 
+		read -p "Enter regex :" regex 
+		format_menu
+		 read -p "Enter format number: " format
 
+                        case $format in
+                        1)
+                        j=0
+                        b=()
+                        for i in ${fields[@]}
+                        do
+                        b+=($(awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} {for(j = 0 ; j<= NF ; j++) if( j == a) if($j ~ c) if($(b+1) == "       " || $(b+1) == ""  ){ print "NULL"}else{gsub(/ /,"",$(b+1)); print $(b+1)} }' $table))
+                        (( j++ ))
+                        done
+                        i=0
+                        rows=$(( ${#b[@]}/$j ))
+                        while test $i -lt  $rows
+                        do
+                        m=0
+                        k=i
+                        while test $m -lt $j
+                        do
+                        echo -n ${b[$k]} "," 
+                        (( k+=$rows ))
+                        (( m++ ))
+                        done
+                        echo
+                        (( i++ ))
+                        done
+                        ;;
+                        2)
+                        echo "<html><body><table border="1"> <tr>" > ../../display.html
+                        j=0
+                        b=()
+                        for i in ${fields[@]}
+                        do
+                        echo
+                        awk -va="$i" 'BEGIN{FS="|"} { if(NR == 2 )  print "<th>"$(a+1)"</th>"}' $table >> ../../display.html
+                        done
+                        echo "</tr>" >> ../../display.html
+                        for i in ${fields[@]}
+                        do
+                        b+=($(awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} {for(j = 0 ; j<= NF ; j++) if( j == a) if($j ~ c) if($(b+1) == "       " || $(b+1) == ""   ){ print "NULL"}else{gsub(/ /,"",$(b+1)); print $(b+1)} }' $table))
+                        (( j++ ))
+                        done
+                        i=0
+                        rows=$(( ${#b[@]}/$j ))
+                        while test $i -lt  $rows
+                        do
+                        m=0
+                        k=i
+                        echo "<tr>" >> ../../display.html
+                        while test $m -lt $j
+                        do
+                        echo "<td>${b[$k]}</td>" >> ../../display.html
+                        (( k+=$rows ))
+                        (( m++ ))
+                        done
+                        echo "</tr>" >> ../../display.html
+                        (( i++ ))
+                        done
+                        echo "</table></body></html>" >> ../../display.html
+                        xdg-open ../../display.html
+                        ;;
+                        *) echo "Invalid format !"
+                        esac
+
+#		for i in ${fields[@]}
+#               do
+#               awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} {for(j = 0 ; j<= NF ; j++) if( j == a) if($j ~ c) print $(b+1) }' $table
+#               done
+ 
+		
 		fi
 
 		 # for i in ${fields[@]}
@@ -307,67 +380,23 @@ show_tables(){
 show_DBs(){
 
 	
-	ls $DBMS_DIR > $DBMS_DIR/.databases
+	ls  > ../.databases
 	#count=0
-	databases=`awk ' { print $1 } ' $DBMS_DIR/.databases`
+	databases=`awk ' { print $1 } ' ../.databases`
 	#echo $databases
 	echo "---------------"
 	echo "Databases"
 	echo "---------------"
 	for db in $databases
 	do
-		#test -d $DBMS_DIR/$db && echo "$((++count))- $db"
-		test -d $DBMS_DIR/$db && echo "$db"
+		
+		test -d $db && echo "$db"
 	done
 	echo "---------------"
 }
 
-###############################################
-
-table-menu(){
-  while true
-  do
-  echo -e  "\n+----------table Menu-----------+"
-  echo "| 1. Create table               |"
-  echo "| 2. Select record(s)           |"
-  echo "| 3. Edit record                |"
-  echo "| 4. Delete record              |"
-  echo "| 5. Sort table                 |"
-  echo "| 6. Alter table                |"
-  echo "| 7. Delete Record              |"
-  echo "| 8. Add Record                 |"
-  echo "| 9. Display table              |"
-  echo "| 10. Drop table                |"
-  echo "| 11. Exit                      |"
-  echo "+-------------------------------+"
-  read -p "Enter Choice: " n
-  case $n in
- 1)
-	create_table
-	;;  
- 2)
-select_record
-;;
-  3)
-        ;;
-  4);;
-  5)
-        ;;
-  6);;
-  7);;
-  8);;
-  9);;
-  10);;
-  11)
-        cd ..
-        break
-        ;;
-  *)
-        echo "Invalid option!"
-  esac
-  done
-}
-
+#####################################################
+  
 select_DB(){
 
 	read -p "Database: " db
@@ -386,7 +415,7 @@ select_DB(){
 		echo "| 7. Delete record              |"
 		echo "| 8. Display table              |"
 		echo "| 9. Sort table                 |"
-		echo "| 10. Select record(s)           |"
+		echo "| 10. Select record(s)          |"
 		echo "| 11. Back                      |"
 		echo "+-------------------------------+"
 		read -p "Enter Choice: " n
@@ -449,8 +478,8 @@ main_menu(){
   read -p "Enter Choice: " n
   case $n in 
  1)
-select_DB
-;;
+	select_DB
+	;;
   2)
 	create_DB
 	;;
@@ -458,7 +487,9 @@ select_DB
   4)
 	drop_DB
 	;;
-  5);;
+  5)
+	show_DBs
+	;;
   6)
 	cd ..
 	break
