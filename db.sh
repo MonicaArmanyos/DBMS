@@ -205,13 +205,13 @@ select_record()
                  echo "+------------------+"
                   read -p "Enter format number: " format
 		case $format in
-		1)# awk -v arr="${fields[*]}" 'BEGIN { FS="|"; OFS="," } { if(NR >= 2) { for(i in arr) print i }}' $table
+		1)
 		#cols=${fields[@]}
-                j=0
+             	 j=0
 		b=()
 		  for i in ${fields[@]}
                   do
-                   b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR >= 2 && NR != 3)  print $(a+1) }' $table))
+                   b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR >= 2 && NR != 3) if($(a+1) == "       "){ print "NULL"}else{ print $(a+1)} }' $table))
 		(( j++ ))
                   done
 
@@ -225,16 +225,50 @@ select_record()
 			k=i
 			while test $m -lt $j
 			do
-		 	echo -n ${b[$k]} ","
+		 	echo -n ${b[$k]} "," 
 			(( k+=$rows ))
 			(( m++ ))
 			done
                  echo
                   (( i++ ))
-                  done
-
+		done
 		;;
-		2);;
+		2)
+		echo "<html><body><table border="1"> <tr>" > display.html
+		j=0
+                b=()
+                  for i in ${fields[@]}
+                  do
+		echo
+                   awk -va="$i" 'BEGIN{FS="|"} { if(NR == 2 )  print "<th>"$(a+1)"</th>"}' $table >> display.html
+                  done
+		 echo "</tr>" >> display.html
+
+                  for i in ${fields[@]}
+                  do
+                   b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR > 2 && NR != 3)  if($(a+1) == "       "){ print "NULL"}else{ print $(a+1)} }' $table))
+                (( j++ ))
+                  done
+                i=0
+                rows=$(( ${#b[@]}/$j ))
+                while test $i -lt  $rows
+                do
+                        m=0
+                        k=i
+			echo "<tr>" >> display.html
+                        while test $m -lt $j
+                        do
+                        echo "<td>${b[$k]}</td>" >> display.html 
+                        (( k+=$rows ))
+                        (( m++ ))
+                        done
+                 echo "</tr>" >>display.html
+                  (( i++ ))
+                  done
+		echo "</table></body></html>" >> display.html
+		 xdg-open display.html
+		#awk 'BEGIN{FS="|";print "<html><body><table border="1">"}{if(NR=2) print "<tr>" print"</tr>"}END {print "</table></body><html>"}' $table > display.html
+		;;
 		*) echo "Invalid format !"
 		esac
 
