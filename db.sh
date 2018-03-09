@@ -153,3 +153,14 @@ done
 done
 }
 updateTable
+displayTable(){
+read -p "Enter table name:" tableName
+ if  [ ! -f $tableName ]
+     then
+    echo "Table $tableName does not  existed ,choose another Table"
+ else
+ cat .$tableName
+  fi
+}
+displayTable
+
