@@ -1,10 +1,10 @@
 #!/bin/bash
-readonly DATABASES="Databases";
+readonly DBMS_DIR="Databases";
 
 create_DB()
 {
 	read -p "Database name: " db
-	if test -d $DATABASES/$db
+	if test -d $DBMS_DIR/$db
 	then echo "Couldn't create database.Database already exits!"
 	else
 		mkdir $db
@@ -27,19 +27,167 @@ drop_DB()
 	echo "Database not found"
 	fi
 }
+
+###############################################
+
+add_column(){
+
+	current_DB=`pwd`
+	table_name=$1
+	
+	read -p "Column name: " col_name
+	read -p "Data type: " data_type
+	read -p "Constrains? 'unique/not-null/default=value'(type constrains separted by spaces): " constrains	
+	echo "$col_name $data_type $constrains" >> .$table_name
+
+}
+
+###############################################
+
+add_primary(){
+
+	current_DB=`pwd`
+	table_name=$1
+	
+	read -p "Primary key name: " col_name
+	read -p "Data type: " data_type
+	echo "$col_name $data_type pimary_key" > .$table_name 
+}
+
+
+###############################################
+edit_column(){
+
+	table_name=$1
+
+	read -p "Column: " col_name
+	
+	if grep -q "^$col_name.*$" ".$table_name"
+	then
+		read -p "Column name: " new_col_name
+		read -p "Data type: " data_type
+		read -p "Constrains? 'unique/not-null/default=value'(type constrains separted by spaces): " constrains	
+		sed -i "s/^$col_name.*$/$new_col_name $data_type $constrains/g" ".$table_name"	
+		test $? == 0 && echo "Column changed successfully"		 
+		
+	else
+		echo "column doesn't exist"
+	fi
+}
+
+###############################################
+
+drop_column(){
+
+	table_name=$1
+	read -p "Column: " col_name
+
+	if grep -q "^$col_name.*$" ".$table_name"
+	then
+		sed -i "/$col_name/d" ".$table_name"
+		test $? == 0 && echo "Column dropped successfully"		 
+		
+	else
+		echo "column doesn't exist"
+	fi
+}
+###############################################
+
+create_table(){
+
+	read -p "Table name: " table_name	
+	#current_DB=`pwd`
+	state=1
+	if test -f $table_name 
+	then 
+		echo "Can't create table. Already exists" 
+		state=0 
+	else 
+		touch $table_name 
+		touch .$table_name
+		test -f $table_name && echo "table $table_name created" || state=0
+	fi
+	if test $state == 1 
+	then 
+		add_primary $table_name
+		while true
+		do
+			echo -e  "\n+---------Table Menu-------------+"
+			echo "| 1. Add column                 |"
+			echo "| 2. Back                       |"
+			echo "+-------------------------------+"
+			read -p "Enter Choice: " n
+			case $n in
+			1) 
+				add_column $table_name 
+				;;
+			2)
+				break
+				;;
+			*)
+				echo "Invalid option!"
+			esac
+		done
+	fi	
+}
+
+###############################################
+
+alter_table(){
+
+	current_DB=`pwd`
+	read -p "Table: " table_name	
+	if test -f $current_DB/$table_name 
+	then
+		while true
+		do
+			echo -e  "\n+---------Table Menu-------------+"
+			echo "| 1. Edit column                |"
+			echo "| 2. Drop column                |"
+			echo "| 3. Back                       |"
+			echo "+-------------------------------+"
+			read -p "Enter Choice: " n
+			case $n in
+			1) 
+				edit_column $table_name 
+				;;
+			2)
+				drop_column $table_name 
+				;;
+			3)
+				break
+				;;
+			*)
+				echo "Invalid option!"
+			esac
+		done	
+	else
+		echo "Table doen't exist"
+	fi
+		
+
+}
+
+###############################################
+
 select_record()
 {
 	 read -p "Table name: " table
 	if test -f $table 
 	then
-		awk 'BEGIN { FS="|";print "\n+-------------Select--------------+"; } { if(NR == 2) {
+		awk 'BEGIN { FS="|";print "\n+-------------Select--------------+";j=1 } { if(NR == 2) {
 		 for(i = 2; i < NF; i++) { 
-		print "	" $i;
+		print j" " $i;
+		j++;
                   }
                  } } END { print "+---------------------------------+"}' $table
-	         echo "Enter columns: "
+	         echo "Enter columns number: "
 		 IFS=" "  read -a fields
-      
+		 field=""
+		 for i in ${fields[@]}
+		 do
+		 field="$field $i "
+		 done      
                 awk 'BEGIN { FS="|";print "\n+-------------Records-------------+\n1. All";j=2 } { if(NR == 2) {
                  for(i = 2; i < NF; i++) {
 		gsub(/ /,"",$i); 
@@ -57,7 +205,35 @@ select_record()
                  echo "+------------------+"
                   read -p "Enter format number: " format
 		case $format in
-		1) awk 'BEGIN { FS="|"; OFS=","} { if(NR > 2) { print $0 }}' $table
+		1)# awk -v arr="${fields[*]}" 'BEGIN { FS="|"; OFS="," } { if(NR >= 2) { for(i in arr) print i }}' $table
+		#cols=${fields[@]}
+                j=0
+		b=()
+		  for i in ${fields[@]}
+                  do
+                   b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR >= 2 && NR != 3)  print $(a+1) }' $table))
+		(( j++ ))
+                  done
+
+		# b=($(awk 'BEGIN{FS="|"; OFS=","} { if(NR >= 2 && NR != 3)  print $2 }' $table))
+                # c=($(awk 'BEGIN{FS="|"; OFS=","} { if(NR >= 2 && NR != 3)  print $3 }' $table))
+		i=0 
+		rows=$(( ${#b[@]}/$j )) 
+		while test $i -lt  $rows
+		do
+			m=0
+			k=i
+			while test $m -lt $j
+			do
+		 	echo -n ${b[$k]} ","
+			(( k+=$rows ))
+			(( m++ ))
+			done
+                 echo
+                  (( i++ ))
+                  done
+
+		;;
 		2);;
 		*) echo "Invalid format !"
 		esac
@@ -72,6 +248,47 @@ select_record()
 	echo "Sorry table doesn't exist"
 	fi
 }
+
+
+show_tables(){
+	
+	current_DB=`pwd`
+	ls > .tables
+	#count=0
+	tables=`awk ' { print $1 } ' .tables`
+	#echo $databases
+	echo
+	echo "---------------"
+	echo "Tables"
+	echo "---------------"
+	for table in $tables
+	do
+		test -f $table && echo "$table"
+	done
+	echo "---------------"
+}
+
+###############################################
+
+show_DBs(){
+
+	
+	ls $DBMS_DIR > $DBMS_DIR/.databases
+	#count=0
+	databases=`awk ' { print $1 } ' $DBMS_DIR/.databases`
+	#echo $databases
+	echo "---------------"
+	echo "Databases"
+	echo "---------------"
+	for db in $databases
+	do
+		#test -d $DBMS_DIR/$db && echo "$((++count))- $db"
+		test -d $DBMS_DIR/$db && echo "$db"
+	done
+	echo "---------------"
+}
+
+###############################################
 
 table-menu(){
   while true
@@ -91,7 +308,9 @@ table-menu(){
   echo "+-------------------------------+"
   read -p "Enter Choice: " n
   case $n in
- 1);;  
+ 1)
+	create_table
+	;;  
  2)
 select_record
 ;;
@@ -115,6 +334,73 @@ select_record
   done
 }
 
+select_DB(){
+
+	read -p "Database: " db
+	state=1
+	test -d $db && cd $db || state=0
+	test $state == 1 && echo "Database changed to $db" || echo "Database doesn't exit"
+	test $state == 1 && while true
+	do
+		echo -e  "\n+---------Database Menu-------------+"
+		echo "| 1. Create Table               |"
+		echo "| 2. Alter Table                |"
+		echo "| 3. Drop Table                 |"
+		echo "| 4. Show Tables                |"
+		echo "| 5. Add record                 |"
+		echo "| 6. Edit record                |"
+		echo "| 7. Delete record              |"
+		echo "| 8. Display table              |"
+		echo "| 9. Sort table                 |"
+		echo "| 10. Select record(s)           |"
+		echo "| 11. Back                      |"
+		echo "+-------------------------------+"
+		read -p "Enter Choice: " n
+		case $n in
+		1)
+			create_table
+			;;
+		2)
+			alter_table
+			;;
+		3)
+			drop_table
+			;;
+		4)
+			show_tables
+			;;
+		5)
+			add_record
+			;;
+		6)
+			edit_record
+			;;
+		7)
+			delete_record
+			;;
+		8)
+			display_table
+			;;
+		9)
+			sort_table
+			;;
+		10)
+			select_record
+			;;
+
+		11)
+			break
+			;;
+		*)
+			echo "Invalid option!"
+		esac
+	done	
+}
+
+
+###############################################
+
+
 main_menu(){
   while true
   do
@@ -129,8 +415,7 @@ main_menu(){
   read -p "Enter Choice: " n
   case $n in 
  1)
-cd Students
-table-menu
+select_DB
 ;;
   2)
 	create_DB
@@ -150,6 +435,6 @@ table-menu
   done
 }
 
-cd $DATABASES
+cd $DBMS_DIR
 main_menu
 
