@@ -163,4 +163,16 @@ read -p "Enter table name:" tableName
   fi
 }
 displayTable
+renameDB(){
+read -p "Enter current database name:" dbName
+read -p "Enter new database name:" newdbName
+ mv /DBMS/$dbName /DBMS/$newdbName
+  if [[ $? == 0 ]]
+then
+    echo "Database Renamed Successfully"
+  else
+    echo "Error Renaming Database"
+fi
+}
+renameDB
 
