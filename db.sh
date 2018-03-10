@@ -182,8 +182,8 @@ select_record()
 	if test -f $table 
 	then
 		
-		awk 'BEGIN { FS="|";print "\n+-------------Select--------------+";j=1 } { if(NR == 2) {
-		for(i = 2; i < NF; i++) { 
+		awk 'BEGIN { FS="|";print "\n+-------------Select--------------+";j=1 } { if(NR == 1) {
+		for(i = 1; i <= NF; i++) { 
 		print j" " $i;
 		j++;
                   }
@@ -195,8 +195,8 @@ select_record()
 		 do
 		 field="$field $i "
 		 done      
-                awk 'BEGIN { FS="|";print "\n+-------------Records-------------+\n1. All";j=2 } { if(NR == 2) {
-                for(i = 2; i < NF; i++) {
+                awk 'BEGIN { FS="|";print "\n+-------------Records-------------+\n1. All";j=2 } { if(NR == 1) {
+                for(i = 1; i <= NF; i++) {
 		gsub(/ /,"",$i); 
                  print j ". where " $i  " matches" ;
 		 j++;
@@ -214,7 +214,7 @@ select_record()
 			b=()
 			for i in ${fields[@]}
 			do
-			b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR >= 2 && NR != 3) if($(a+1) == "       "|| $(a+1) == ""  ){ print "NULL"}else{gsub(/ /,"",$(a+1)); print $(a+1)} }' $table))
+			b+=($(awk -va="$i" 'BEGIN{FS="|"} {if($0 == "") {} else {if($a == ""  ){ print "NULL"} else {gsub(/ /,"-",$a); print $a}}}' $table))
 			(( j++ ))
 			done
 			i=0 
@@ -241,12 +241,12 @@ select_record()
 			for i in ${fields[@]}
 			do
 			echo
-			awk -va="$i" 'BEGIN{FS="|"} { if(NR == 2 )  print "<th>"$(a+1)"</th>"}' $table >> ../../display.html
+			awk -va="$i" 'BEGIN{FS="|"} { if(NR == 1 )  print "<th>"$a"</th>"}' $table >> ../../display.html
 			done
 			echo "</tr>" >> ../../display.html
 			for i in ${fields[@]}
 			do
-			b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR > 2 && NR != 3)  if($(a+1) == "       " || $(a+1) == "" ){ print "NULL"}else{gsub(/ /,"",$(a+1));  print $(a+1)} }' $table))
+			b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR > 1) if($0 == "") {} else {if($a == ""  ){ print "NULL"} else {gsub(/ /,"-",$a); print $a}}}' $table))
 			(( j++ ))
 			done
 			i=0
@@ -282,7 +282,7 @@ select_record()
                         b=()
                         for i in ${fields[@]}
                         do
-                        b+=($(awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} {for(j = 0 ; j<= NF ; j++) if( j == a) if($j ~ c) if($(b+1) == "       " || $(b+1) == ""  ){ print "NULL"}else{gsub(/ /,"",$(b+1)); print $(b+1)} }' $table))
+                        b+=($(awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} {for(j = 1 ; j <= NF ; j++) if( j == a-1 ) if($j ~ c) if($b == ""  ){ print "NULL"} else{ gsub(/ /,"",$b); print $b}  }' $table))
                         (( j++ ))
                         done
                         i=0
@@ -308,12 +308,12 @@ select_record()
                         for i in ${fields[@]}
                         do
                         echo
-                        awk -va="$i" 'BEGIN{FS="|"} { if(NR == 2 )  print "<th>"$(a+1)"</th>"}' $table >> ../../display.html
+                        awk -va="$i" 'BEGIN{FS="|"} { if(NR == 1 )  print "<th>"$a"</th>"}' $table >> ../../display.html
                         done
                         echo "</tr>" >> ../../display.html
                         for i in ${fields[@]}
                         do
-                        b+=($(awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} {for(j = 0 ; j<= NF ; j++) if( j == a) if($j ~ c) if($(b+1) == "       " || $(b+1) == ""   ){ print "NULL"}else{gsub(/ /,"",$(b+1)); print $(b+1)} }' $table))
+                        b+=($(awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} { if(NR > 1){ for(j = 1 ; j <= NF ; j++) if( j == a-1 ) if($j ~ c) if($b == ""  ){ print "NULL"} else{ gsub(/ /,"",$b); print $b}  } }' $table))
                         (( j++ ))
                         done
                         i=0
@@ -338,18 +338,10 @@ select_record()
                         *) echo "Invalid format !"
                         esac
 
-#		for i in ${fields[@]}
-#               do
-#               awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} {for(j = 0 ; j<= NF ; j++) if( j == a) if($j ~ c) print $(b+1) }' $table
-#               done
+
  
 		
 		fi
-
-		 # for i in ${fields[@]}
-		 # do
-		 # echo  $i
-		 # done
 	else
 	echo "Sorry table doesn't exist"
 	fi
