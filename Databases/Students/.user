@@ -1,2 +1,0 @@
-id int pimary_key
-name varchar not-null
