@@ -455,7 +455,7 @@ select_DB(){
 	test $state == 1 && echo "Database changed to $db" || echo "Database doesn't exit"
 	test $state == 1 && while true
 	do
-		echo -e  "\n+---------Database Menu-------------+"
+		echo -e  "\n+-------Database Menu-----------+"
 		echo "| 1. Create Table               |"
 		echo "| 2. Alter Table                |"
 		echo "| 3. Drop Table                 |"
