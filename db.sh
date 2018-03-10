@@ -167,7 +167,6 @@ alter_table(){
 		
 
 }
-
 ###############################################
 format_menu()
 {
@@ -396,7 +395,33 @@ show_DBs(){
 }
 
 #####################################################
-  
+
+drop_table()
+{
+	read -p "Enter table name :" table
+	if test -f $table 
+	then
+	rm $table
+	rm .$table
+	if test -f $table  
+	then 
+		 echo "Could not drop table" 
+		
+	else
+                if test -f .$table 
+                then
+                         echo "Could not drop table" 
+                else 
+                        echo "Table dropped succesfully"
+                fi
+
+	fi
+	else
+	echo "table doesn't exit"
+	fi
+}
+
+######################################################  
 select_DB(){
 
 	read -p "Database: " db
