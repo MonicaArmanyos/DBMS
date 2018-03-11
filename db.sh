@@ -8,7 +8,11 @@ create_DB()
 {
 	read -p "Database name: " db
 	if test -d $db
+<<<<<<< HEAD
 	then echo "Couldn't create database. Database already exits!"
+=======
+	then echo "Couldn't create database.Database already exits!"
+>>>>>>> Monica
 	else
 		mkdir $db
 		if test -d $db
@@ -358,6 +362,7 @@ select_record()
                  read -p "Enter format number: " format
 			case $format in
 			1)
+			echo -n "" > ../../disp.csv
 			j=0
 			b=()
 			for i in ${fields[@]}
@@ -373,14 +378,15 @@ select_record()
 			k=i
 			while test $m -lt $j
 			do
-		 	echo -n ${b[$k]} "," 
+		 	echo -n ${b[$k]} "," >> ../../disp.csv 
 			
 			(( k+=$rows ))
 			(( m++ ))
-			done
-			echo
+			done 
+			echo >> ../../disp.csv
 			(( i++ ))
 			done
+			cat  ../../disp.csv
 			;;
 			2)
 			echo "<html><body><table border="1"> <tr>" > ../../display.html
@@ -426,6 +432,7 @@ select_record()
 
                         case $format in
                         1)
+			echo -n "" > ../../disp.csv
                         j=0
                         b=()
                         for i in ${fields[@]}
@@ -441,13 +448,14 @@ select_record()
                         k=i
                         while test $m -lt $j
                         do
-                        echo -n ${b[$k]} "," 
+                        echo -n ${b[$k]} "," >> ../../disp.csv 
                         (( k+=$rows ))
                         (( m++ ))
                         done
-                        echo
+                        echo >> ../../disp.csv
                         (( i++ ))
                         done
+			cat ../../disp.csv
                         ;;
                         2)
                         echo "<html><body><table border="1"> <tr>" > ../../display.html
