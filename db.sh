@@ -195,7 +195,7 @@ create_table(){
 	else 
 		touch $table_name 
 		touch .$table_name
-		echo "Field|Type|constrains|default" >> .$table_name
+		echo "Field|Type|Constrains|Default" >> .$table_name
 		test -f $table_name && echo "table $table_name created" || state=0
 	fi
 	if test $state == 1 
@@ -331,8 +331,8 @@ select_record()
 	if test -f $table 
 	then
 		
-		awk 'BEGIN { FS="|";print "\n+-------------Select--------------+";j=1 } { if(NR == 2) {
-		for(i = 2; i < NF; i++) { 
+		awk 'BEGIN { FS="|";print "\n+-------------Select--------------+";j=1 } { if(NR == 1) {
+		for(i = 1; i <= NF; i++) { 
 		print j" " $i;
 		j++;
                   }
@@ -344,8 +344,8 @@ select_record()
 		 do
 		 field="$field $i "
 		 done      
-                awk 'BEGIN { FS="|";print "\n+-------------Records-------------+\n1. All";j=2 } { if(NR == 2) {
-                for(i = 2; i < NF; i++) {
+                awk 'BEGIN { FS="|";print "\n+-------------Records-------------+\n1. All";j=2 } { if(NR == 1) {
+                for(i = 1; i <= NF; i++) {
 		gsub(/ /,"",$i); 
                  print j ". where " $i  " matches" ;
 		 j++;
@@ -363,7 +363,7 @@ select_record()
 			b=()
 			for i in ${fields[@]}
 			do
-			b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR >= 2 && NR != 3) if($(a+1) == "       "|| $(a+1) == ""  ){ print "NULL"}else{gsub(/ /,"",$(a+1)); print $(a+1)} }' $table))
+			b+=($(awk -va="$i" 'BEGIN{FS="|"} {if($0 == "") {} else {if($a == ""  ){ print "NULL"} else {gsub(/ /,"-",$a); print $a}}}' $table))
 			(( j++ ))
 			done
 			i=0 
@@ -390,12 +390,12 @@ select_record()
 			for i in ${fields[@]}
 			do
 			echo
-			awk -va="$i" 'BEGIN{FS="|"} { if(NR == 2 )  print "<th>"$(a+1)"</th>"}' $table >> ../../display.html
+			awk -va="$i" 'BEGIN{FS="|"} { if(NR == 1 )  print "<th>"$a"</th>"}' $table >> ../../display.html
 			done
 			echo "</tr>" >> ../../display.html
 			for i in ${fields[@]}
 			do
-			b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR > 2 && NR != 3)  if($(a+1) == "       " || $(a+1) == "" ){ print "NULL"}else{gsub(/ /,"",$(a+1));  print $(a+1)} }' $table))
+			b+=($(awk -va="$i" 'BEGIN{FS="|"} { if(NR > 1) if($0 == "") {} else {if($a == ""  ){ print "NULL"} else {gsub(/ /,"-",$a); print $a}}}' $table))
 			(( j++ ))
 			done
 			i=0
@@ -431,7 +431,7 @@ select_record()
                         b=()
                         for i in ${fields[@]}
                         do
-                        b+=($(awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} {for(j = 0 ; j<= NF ; j++) if( j == a) if($j ~ c) if($(b+1) == "       " || $(b+1) == ""  ){ print "NULL"}else{gsub(/ /,"",$(b+1)); print $(b+1)} }' $table))
+                        b+=($(awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} {for(j = 1 ; j <= NF ; j++) if( j == a-1 ) if($j ~ c) if($b == ""  ){ print "NULL"} else{ gsub(/ /,"",$b); print $b}  }' $table))
                         (( j++ ))
                         done
                         i=0
@@ -457,12 +457,12 @@ select_record()
                         for i in ${fields[@]}
                         do
                         echo
-                        awk -va="$i" 'BEGIN{FS="|"} { if(NR == 2 )  print "<th>"$(a+1)"</th>"}' $table >> ../../display.html
+                        awk -va="$i" 'BEGIN{FS="|"} { if(NR == 1 )  print "<th>"$a"</th>"}' $table >> ../../display.html
                         done
                         echo "</tr>" >> ../../display.html
                         for i in ${fields[@]}
                         do
-                        b+=($(awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} {for(j = 0 ; j<= NF ; j++) if( j == a) if($j ~ c) if($(b+1) == "       " || $(b+1) == ""   ){ print "NULL"}else{gsub(/ /,"",$(b+1)); print $(b+1)} }' $table))
+                        b+=($(awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} { if(NR > 1){ for(j = 1 ; j <= NF ; j++) if( j == a-1 ) if($j ~ c) if($b == ""  ){ print "NULL"} else{ gsub(/ /,"",$b); print $b}  } }' $table))
                         (( j++ ))
                         done
                         i=0
@@ -486,23 +486,12 @@ select_record()
                         ;;
                         *) echo "Invalid format !"
                         esac
-
-#		for i in ${fields[@]}
-#               do
-#               awk -va="$option" -vb="$i" -vc="$regex" 'BEGIN{FS="|"} {for(j = 0 ; j<= NF ; j++) if( j == a) if($j ~ c) print $(b+1) }' $table
-#               done
- 
-		
 		fi
-
-		 # for i in ${fields[@]}
-		 # do
-		 # echo  $i
-		 # done
 	else
 	echo "Sorry table doesn't exist"
 	fi
 }
+
 ###############################################
 
 show_tables(){
@@ -567,6 +556,47 @@ drop_table()
 	else
 	echo "table doesn't exit"
 	fi
+}
+
+######################################################  
+
+sort_table()
+{
+	read -p "Enter table name :" table
+	if test -f $table
+	then
+		echo "+------------Sort------------+"
+		echo "|1.Ascendingly               |"
+		echo "|2.Decendingly               |"
+		echo "+----------------------------+"
+		read -p "Choose option number :" option
+                awk 'BEGIN { FS="|";print "\n+-------------Select--------------+";j=1 } { if(NR == 1) {
+                for(i = 1; i <= NF; i++) { 
+                print j" " $i;
+                j++;
+                  }
+                 } } END { print "+---------------------------------+"}' $table
+		read -p "Enter field number to sort according to :" field
+
+		case $option in
+		1)
+			awk '{ if(NR == 1) print }' $table
+
+			tail -n +2 $table | sort   -t "|" -k $field 
+			;;
+		2)
+			awk '{ if(NR == 1) print }' $table
+			echo
+
+			 tail -n +2 $table | sort -r  -t "|" -k $field 
+			;;
+		*) echo "Invalid option"
+		esac
+
+	else
+		echo "Sorry, table not found"
+	fi
+	
 }
 
 ######################################################  
