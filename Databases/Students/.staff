@@ -2,9 +2,6 @@ Field|Type|constrains|default
 id|int|PK
 name|string||
 1|int||os
-dd|gg||
-hello|int||
-jj|ii||yy
 harry|int||os
 ugyh|ii||
 waho|ii||
