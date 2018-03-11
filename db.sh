@@ -429,12 +429,17 @@ sort_table()
                   }
                  } } END { print "+---------------------------------+"}' $table
 		read -p "Enter field number to sort according to :" field
-		
+
 		case $option in
 		1)
+			awk '{ if(NR == 1) print }' $table
+
 			tail -n +2 $table | sort   -t "|" -k $field 
 			;;
 		2)
+			awk '{ if(NR == 1) print }' $table
+			echo
+
 			 tail -n +2 $table | sort -r  -t "|" -k $field 
 			;;
 		*) echo "Invalid option"
