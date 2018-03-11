@@ -1,11 +1,14 @@
 #!/bin/bash
+
 readonly DBMS_DIR="Databases";
+
+###############################################
 
 create_DB()
 {
 	read -p "Database name: " db
-	if test -d $DBMS_DIR/$db
-	then echo "Couldn't create database.Database already exits!"
+	if test -d $db
+	then echo "Couldn't create database. Database already exits!"
 	else
 		mkdir $db
 		if test -d $db
@@ -16,6 +19,9 @@ create_DB()
 		fi
 	fi
 }
+
+#####################################################
+
 drop_DB()
 {
 	read -p "Database name: " db
@@ -32,42 +38,104 @@ drop_DB()
 
 add_column(){
 
-	current_DB=`pwd`
 	table_name=$1
-	
-	read -p "Column name: " col_name
-	read -p "Data type: " data_type
-	read -p "Constrains? 'unique/not-null/default=value'(type constrains separted by spaces): " constrains	
-	echo "$col_name $data_type $constrains" >> .$table_name
 
+	read -p "Column name: " col_name
+
+	while test "$col_name" == ""
+	do	
+		echo "Column name can't be empty!"
+		read -p "Column name: " col_name
+	done
+
+	if grep -q "^$col_name.*$" ".$table_name" 
+	then
+		echo "Can't add column. Already exists!"
+
+	else 
+		read -p "Data type: " data_type
+
+		while test "$data_type" == ""
+		do	
+			echo "Column data type can't be empty!"
+			read -p "Data type: " data_type
+		done
+	
+		read -p "Constrains? 'unique/not-null/default=value'(type constrains separted by spaces): " constrains
+		read -p	"Default value: " default
+
+		sed -i "1s/$/|$col_name/" $table_name
+
+		echo "$col_name|$data_type|$constrains|$default" >> .$table_name
+
+		test "$default" == "" && default="null"
+		sed -i "2,$ s/$/|$default/" $table_name
+	fi
 }
 
 ###############################################
 
 add_primary(){
 
-	current_DB=`pwd`
-	table_name=$1
-	
+	table_name=$1	
+
 	read -p "Primary key name: " col_name
+
+	while test "$col_name" == ""
+	do	
+		echo "Primary key name can't be empty!"
+		read -p "Primary key name: " col_name
+	done
+
 	read -p "Data type: " data_type
-	echo "$col_name $data_type pimary_key" > .$table_name 
+
+	while test "$data_type" == ""
+	do	
+		echo "Primary key data type can't be empty!"
+		read -p "Data type: " data_type
+	done
+
+	echo "$col_name|$data_type|PK" >> .$table_name
+	echo "$col_name" >> $table_name
 }
 
 
 ###############################################
+
 edit_column(){
 
 	table_name=$1
 
 	read -p "Column: " col_name
+
+	while test "$col_name" == ""
+	do	
+		echo "Please enter column name!"
+		read -p "Column: " col_name
+	done
 	
 	if grep -q "^$col_name.*$" ".$table_name"
 	then
 		read -p "Column name: " new_col_name
+
+		while test "$col_name" == ""
+		do	
+			echo "Column name can't be empty!"
+			read -p "Column name: " new_col_name
+		done
+
 		read -p "Data type: " data_type
-		read -p "Constrains? 'unique/not-null/default=value'(type constrains separted by spaces): " constrains	
-		sed -i "s/^$col_name.*$/$new_col_name $data_type $constrains/g" ".$table_name"	
+
+		while test "$data_type" == ""
+		do	
+			echo "Column data type can't be empty!"
+			read -p "Data type: " data_type
+		done
+
+		read -p "Constrains? 'unique/not-null/default=value'(type constrains separted by spaces): " constrains
+		read -p	"Default value: " default
+		sed -i "s/^$col_name.*$/$new_col_name|$data_type|$constrains|$default/g" ".$table_name"	
+		sed -i "s/$col_name/$new_col_name/g" "$table_name"	
 		test $? == 0 && echo "Column changed successfully"		 
 		
 	else
@@ -82,29 +150,51 @@ drop_column(){
 	table_name=$1
 	read -p "Column: " col_name
 
+	while test "$col_name" == ""
+	do	
+		echo "Please enter column name!"
+		read -p "Column: " col_name
+	done
+
 	if grep -q "^$col_name.*$" ".$table_name"
 	then
-		sed -i "/$col_name/d" ".$table_name"
-		test $? == 0 && echo "Column dropped successfully"		 
+		sed -i "/$col_name|/d" ".$table_name"
+		test $? == 0 && echo "Column dropped successfully"
+
+		column_num=`awk -F'|' -v col_name=$col_name '{ for(i=1;i<=NF;i++) { if($i == col_name){ print i } } }' "$table_name"`
+
+		cut -d"|" -f-1,$((column_num - 1)),$((column_num + 1))- "$table_name" > tmp
+		cat tmp > $table_name
+		rm tmp
 		
 	else
 		echo "column doesn't exist"
 	fi
 }
+
 ###############################################
 
 create_table(){
 
-	read -p "Table name: " table_name	
+	read -p "Table name: " table_name
+
+	while test "$table_name" == ""
+	do	
+		echo "Please enter table name!"
+		read -p "Table name: " table_name	
+	done	
+
 	#current_DB=`pwd`
 	state=1
 	if test -f $table_name 
+
 	then 
 		echo "Can't create table. Already exists" 
 		state=0 
 	else 
 		touch $table_name 
 		touch .$table_name
+		echo "Field|Type|Constrains|Default" >> .$table_name
 		test -f $table_name && echo "table $table_name created" || state=0
 	fi
 	if test $state == 1 
@@ -135,26 +225,37 @@ create_table(){
 
 alter_table(){
 
-	current_DB=`pwd`
-	read -p "Table: " table_name	
+	read -p "Table name: " table_name
+
+	while test "$table_name" == ""
+	do	
+		echo "Please enter table name!"
+		read -p "Table name: " table_name	
+	done	
+
 	if test -f $table_name 
 	then
 		while true
 		do
 			echo -e  "\n+---------Table Menu-------------+"
-			echo "| 1. Edit column                |"
-			echo "| 2. Drop column                |"
-			echo "| 3. Back                       |"
+			echo "| 1. Add column                 |"			
+			echo "| 2. Edit column                |"
+			echo "| 3. Drop column                |"
+			echo "| 4. Back                       |"
 			echo "+-------------------------------+"
 			read -p "Enter Choice: " n
 			case $n in
-			1) 
+			
+			1)
+				add_column $table_name 
+				;;
+			2) 
 				edit_column $table_name 
 				;;
-			2)
+			3)
 				drop_column $table_name 
 				;;
-			3)
+			4)
 				break
 				;;
 			*)
@@ -167,7 +268,51 @@ alter_table(){
 		
 
 }
+
 ###############################################
+
+delete_record(){
+
+	read -p "Table name: " table_name
+
+	while test "$table_name" == ""
+	do	
+		echo "Please enter table name!"
+		read -p "Table name: " table_name	
+	done
+
+	if test -f $table_name
+	then
+		read -p "Column: " col_name
+
+		while test "$col_name" == ""
+		do	
+			echo "Please enter column name!"
+			read -p "Column: " col_name
+		done
+
+		read -p "Value: " value
+
+		while test "$value" == ""
+		do	
+			echo "Please enter value!"
+			ead -p "Value: " value
+		done
+		sed -i "/$col_name|/d" ".$table_name"
+
+		column_num=`awk -F'|' -v col_name=$col_name '{ for(i=1;i<=NF;i++) { if($i == col_name){ print i } } }' "$table_name"`
+		#awk -F'|' -v col_num=$col_num value=$value '{ if ( $col_num == value ) { $0="";print; } }' input_file.Txt > output_file.txt
+
+		cat tmp > $table_name
+		rm tmp
+
+	else
+		echo "Table doesn't exist"
+	fi
+}
+
+###############################################
+
 format_menu()
 {
                  echo "+------format------+"
@@ -176,6 +321,9 @@ format_menu()
                  echo "+------------------+"
 
 }
+
+#####################################################
+
 select_record()
 {
 	read -p "Table name: " table
@@ -347,6 +495,7 @@ select_record()
 	fi
 }
 
+#####################################################
 
 show_tables(){
 	
@@ -412,6 +561,9 @@ drop_table()
 	echo "table doesn't exit"
 	fi
 }
+
+#####################################################
+
 sort_table()
 {
 	read -p "Enter table name :" table
@@ -452,6 +604,258 @@ sort_table()
 }
 
 ######################################################  
+
+add_record(){
+	read -p "Enter table name:" tableName
+	if  [ ! -f $tableName ]
+	then
+		echo "Table $tableName does not  existed ,choose another Table"
+	else
+		colsNum=`awk 'END{print NR}' .$tableName`
+		i=2
+		separete="|"
+		newln="\n"
+		while [ $i -le $colsNum ]
+		do
+			colName=`awk 'BEGIN{FS="|"} {if(NR=='$i') print $1}' .$tableName`
+			colType=`awk 'BEGIN{FS="|"}{if(NR=='$i') print $2}' .$tableName`
+			constrainsNo=`awk 'BEGIN{FS="|"}{if(NR=='$i') print $3}' .$tableName | awk -F" "  "{ print NF }"`
+			defult=`awk 'BEGIN{FS="|"} {if(NR=='$i') print $4}' .$tableName`
+			read -p "Enter the value of $colName ($colType):"  val
+
+			if [[ $colType == "int" ]]
+			 then
+			 while ! [[ $val =~ ^[0-9]*$  ]]
+			do
+			echo "invalid datatype"
+			read -p "Enter the value of $colName ($colType):" val
+			done
+			else
+			while ! [[ $val =~ ^[A-Za-z][A-Za-z0-9]*$ || $val =~  ^$  ]]
+			do
+			echo "invalid datatype"
+			read -p "Enter the value of $colName ($colType):" val
+			done
+			fi
+			l=1
+			while [ $l -le $constrainsNo ]
+			do
+			colKey=`awk 'BEGIN{FS="|"}{if(NR=='$i') print $3}' .$tableName | awk -v varky="$l" 'BEGIN{FS=" "} { print $varky}'`
+			if [[ $colKey == "PK" ]] 
+			 then
+			while [[ $val == "" ]]
+			do
+			echo "sorry it is primary key, not accept null value"
+			read -p "Enter the value of $colName ($colType):" val
+			done
+			fieldsNum=`awk 'BEGIN{FS="|"} {if(NR=='1') print NF}' $tableName`
+			j=1
+			while [ $j -le $fieldsNum ]
+			do
+			colname=`awk -v var="$j" 'BEGIN{FS="|"} {if(NR=='1') print $var}' $tableName`
+			if [[ $colName == $colname ]]
+			then
+			k=2
+			linesNum=`awk 'END{print NR}' $tableName`
+			while [ $k -le $linesNum ]
+			do
+			oldVal=`awk -v varr="$j" 'BEGIN{FS="|";ORS="\n"} {if(NR=='$k') print $varr}' $tableName`
+			if [[ $val == $oldVal ]]
+			then
+			echo "sorry it is primary key, dublicated value"
+			read -p "Enter the value of $colName ($colType):" val
+			k=1
+			else
+			while [[ $val == "" ]]
+			do
+			echo "sorry it is primary key, not accept null value"
+			read -p "Enter the value of $colName ($colType):" val
+			done
+			fi
+			((k++))
+			done
+			fi
+			((j++))
+			done
+			fi
+			if [[ $colKey == "NOTNULL" ]]
+			 then
+			while [[ $val == "" ]]
+			do
+			echo "sorry it is, not accept null value"
+			read -p "Enter the value of $colName ($colType):" val
+			done
+			fi
+			if [[ $colKey == "UNIQUE" ]]
+			then
+			feldsNum=`awk 'BEGIN{FS="|"} {if(NR=='1') print NF}' $tableName`
+			n=1
+			while [ $n -le $feldsNum ]
+			do
+				colnaame=`awk -v varn="$n" 'BEGIN{FS="|"} {if(NR=='1') print $varn}' $tableName`
+				if [[ $colName == $colnaame ]]
+				then
+				v=2
+				linesNum=`awk 'END{print NR}' $tableName`
+				while [ $v -le $linesNum ]
+				do
+					oldval=`awk -v varrv="$n" 'BEGIN{FS="|";ORS="\n"} {if(NR=='$v') print $varrv}' $tableName`
+					if [[ $val == $oldval ]]
+					then
+					echo "sorry it is unique key, dublicated value"
+					read -p "Enter the value of $colName ($colType):" val
+					v=1
+					fi
+					((v++))
+				done
+				fi
+				((n++))
+			done
+			#if [[ $colKey == "" ]]
+			#then
+				
+			#fi
+			fi
+			((l++))
+			done
+			if [[ $defult == "" ]] 
+			then
+				echo "this field has no default value"
+			else
+				if [[ $val == "" ]]
+				then
+					val=$defult
+				fi
+			fi
+			if [ $i == $colsNum ]
+		 	then
+		 		rowVal=$rowVal$val
+		 	else
+			 	rowVal=$rowVal$val$separete
+			fi
+			((i++))
+		done
+		echo  $rowVal >> $tableName
+		if [[ $? == 0 ]]
+		then
+	    		echo "Data Inserted Successfully"
+	  	else
+		    	echo "Error Inserting Data into Table $tableName"
+	  	fi
+		rowVal=""
+	fi
+}
+
+######################################################  
+
+updateTable() {
+ read -p "Enter table name:" tableName
+ if  [ ! -f $tableName ]
+     then
+    echo "Table $tableName does not  existed ,choose another Table"
+  fi
+fieldsNum=`awk 'BEGIN{FS="|"} {if(NR=='1') print NF}' $tableName`
+ j=1
+while [ $j -le $fieldsNum ]
+do
+colname=`awk -v var="$j" 'BEGIN{FS="|"} {if(NR=='1') print $var}' $tableName`
+fNo=$j
+k=2
+linesNum=`awk 'END{print NR}' $tableName`
+while [ $k -le $linesNum ]
+do
+val=`awk -v varr="$j" 'BEGIN{FS="|";ORS="\n"} {if(NR=='$k') print $varr}' $tableName`
+read -p  "Enter Column name to set: " colSet
+ colsNum=`awk 'END{print NR}' .$tableName`
+l=2
+while [ $l -le $colsNum ]
+do
+colName=`awk 'BEGIN{FS="|"} {if(NR=='$l') print $1}' .$tableName`
+colType=`awk 'BEGIN{FS="|"}{if(NR=='$l') print $2}' .$tableName`
+colKey=`awk 'BEGIN{FS="|"}{if(NR=='$l') print $3}' .$tableName`
+if [[ $colSet == $colName ]]
+then
+setfNo=$l
+read -p "Enter new value to set $colName ($colType): " newVal
+if [[ $colType == "int" ]]
+ then
+ while ! [[ $newVal =~ ^[0-9]*$  ]]
+do
+echo "invalid datatype"
+read -p "Enter new value to set $colName ($colType): " newVal
+done
+else
+ while ! [[ $newVal =~ ^[A-Za-z][A-Za-z0-9]*$  ]]
+do
+echo "invalid datatype"
+read -p "Enter new value to set $colName ($colType): " newVal
+done
+fi
+if [[ $colKey == "PK" ]]
+ then
+fieldsNo=`awk 'BEGIN{FS="|"} {if(NR=='1') print NF}' $tableName`
+n=1
+while [ $n -le $fieldsNo ]
+do
+colnamee=`awk -v var="$n" 'BEGIN{FS="|"} {if(NR=='1') print $var}' $tableName`
+if [[ $colName == $colnamee ]]
+then
+x=2
+linesNo=`awk 'END{print NR}' $tableName`
+while [ $x -le $linesNo ]
+do
+oldVal=`awk -v varr="$n" 'BEGIN{FS="|";ORS="\n"} {if(NR=='$x') print $varr}' $tableName`
+if [[ $newVal == $oldVal ]]
+then
+echo "sorry it is primary key, dublicated value"
+read -p "Enter new value to set $colName ($colType): " newVal
+fi
+((x++))
+done
+fi
+((n++))
+done
+fi
+read -p "Enter value to be updated: " old_val
+result=$(cat $tableName | grep "$old_val")
+update=$(sed -i 's/'$old_val'/'$newVal'/g' $tableName)
+fi
+((l++))
+done
+((k++))
+done
+((j++))
+done
+}
+
+###############################################
+
+displayTable(){
+read -p "Enter table name:" tableName
+ if  [ ! -f $tableName ]
+     then
+    echo "Table $tableName does not  existed ,choose another Table"
+ else
+ cat .$tableName
+  fi
+}
+
+###############################################
+
+renameDB(){
+read -p "Enter current database name:" dbName
+read -p "Enter new database name:" newdbName
+ mv $dbName $newdbName
+  if [[ $? == 0 ]]
+then
+    echo "Database Renamed Successfully"
+  else
+    echo "Error Renaming Database"
+fi
+}
+
+###############################################
+
 select_DB(){
 
 	read -p "Database: " db
@@ -491,13 +895,13 @@ select_DB(){
 			add_record
 			;;
 		6)
-			edit_record
+			updateTable
 			;;
 		7)
 			delete_record
 			;;
 		8)
-			display_table
+			displayTable
 			;;
 		9)
 			sort_table
@@ -515,9 +919,7 @@ select_DB(){
 	done	
 }
 
-
 ###############################################
-
 
 main_menu(){
   while true
@@ -538,7 +940,9 @@ main_menu(){
   2)
 	create_DB
 	;;
-  3);;
+  3)
+	renameDB
+	;;
   4)
 	drop_DB
 	;;
@@ -555,6 +959,9 @@ main_menu(){
   done
 }
 
+###############################################
+
 cd $DBMS_DIR
 main_menu
+
 
