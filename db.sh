@@ -13,7 +13,8 @@ while [ $i -le $colsNum ]
 do
 colName=`awk 'BEGIN{FS="|"} {if(NR=='$i') print $1}' .$tableName`
 colType=`awk 'BEGIN{FS="|"}{if(NR=='$i') print $2}' .$tableName`
-colKey=`awk 'BEGIN{FS="|"}{if(NR=='$i') print $3}' .$tableName`
+constrainsNo=`awk 'BEGIN{FS="|"}{if(NR=='$i') print $3}' .$tableName | awk -F" "  "{ print NF }"`
+defult=`awk 'BEGIN{FS="|"} {if(NR=='$i') print $4}' .$tableName`
 read -p "Enter the value of $colName ($colType):"  val
 
 if [[ $colType == "int" ]]
@@ -24,14 +25,23 @@ echo "invalid datatype"
 read -p "Enter the value of $colName ($colType):" val
 done
 else
- while ! [[ $val =~ ^[A-Za-z][A-Za-z0-9]*$  ]]
+while ! [[ $val =~ ^[A-Za-z][A-Za-z0-9]*$ || $val =~  ^$  ]]
 do
 echo "invalid datatype"
 read -p "Enter the value of $colName ($colType):" val
 done
 fi
+l=1
+while [ $l -le $constrainsNo ]
+do
+colKey=`awk 'BEGIN{FS="|"}{if(NR=='$i') print $3}' .$tableName | awk -v varky="$l" 'BEGIN{FS=" "} { print $varky}'`
 if [[ $colKey == "PK" ]] 
  then
+while [[ $val == "" ]]
+do
+echo "sorry it is primary key, not accept null value"
+read -p "Enter the value of $colName ($colType):" val
+done
 fieldsNum=`awk 'BEGIN{FS="|"} {if(NR=='1') print NF}' $tableName`
 j=1
 while [ $j -le $fieldsNum ]
@@ -48,12 +58,64 @@ if [[ $val == $oldVal ]]
 then
 echo "sorry it is primary key, dublicated value"
 read -p "Enter the value of $colName ($colType):" val
+k=1
+else
+while [[ $val == "" ]]
+do
+echo "sorry it is primary key, not accept null value"
+read -p "Enter the value of $colName ($colType):" val
+done
 fi
 ((k++))
 done
 fi
 ((j++))
-done 
+done
+fi
+if [[ $colKey == "NOTNULL" ]]
+ then
+while [[ $val == "" ]]
+do
+echo "sorry it is, not accept null value"
+read -p "Enter the value of $colName ($colType):" val
+done
+fi
+if [[ $colKey == "UNIQUE" ]]
+then
+feldsNum=`awk 'BEGIN{FS="|"} {if(NR=='1') print NF}' $tableName`
+n=1
+while [ $n -le $feldsNum ]
+do
+colnaame=`awk -v varn="$n" 'BEGIN{FS="|"} {if(NR=='1') print $varn}' $tableName`
+if [[ $colName == $colnaame ]]
+then
+v=2
+linesNum=`awk 'END{print NR}' $tableName`
+while [ $v -le $linesNum ]
+do
+oldval=`awk -v varrv="$n" 'BEGIN{FS="|";ORS="\n"} {if(NR=='$v') print $varrv}' $tableName`
+if [[ $val == $oldval ]]
+then
+echo "sorry it is unique key, dublicated value"
+read -p "Enter the value of $colName ($colType):" val
+v=1
+fi
+((v++))
+done
+fi
+((n++))
+done
+fi
+((l++))
+done
+if [[ $defult == "" ]] 
+then
+echo "this field has no default value"
+else
+if [[ $val == "" ]]
+then
+val=$defult
+fi
 fi
 if [ $i == $colsNum ]
  then
