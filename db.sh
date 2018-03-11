@@ -134,7 +134,7 @@ edit_column(){
 			read -p "Data type: " data_type
 		done
 
-		read -p "Constrains? 'unique/not-null/default=value'(type constrains separted by spaces): " constrains
+		read -p "Constrains? 'UNIQUE/NOTNULL'(type constrains separted by spaces): " constrains
 		read -p	"Default value: " default
 		sed -i "s/^$col_name.*$/$new_col_name|$data_type|$constrains|$default/g" ".$table_name"	
 		sed -i "s/$col_name/$new_col_name/g" "$table_name"	
@@ -165,7 +165,7 @@ drop_column(){
 
 		column_num=`awk -F'|' -v col_name=$col_name '{ for(i=1;i<=NF;i++) { if($i == col_name){ print i } } }' "$table_name"`
 
-		cut -d"|" -f-1,$((column_num - 1)),$((column_num + 1))- "$table_name" > tmp
+		cut -d"|" -f-$((column_num - 1)),$((column_num + 1))- "$table_name" > tmp
 		cat tmp > $table_name
 		rm tmp
 		
