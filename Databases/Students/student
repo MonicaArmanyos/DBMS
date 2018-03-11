@@ -1,2 +1,16 @@
+<<<<<<< HEAD
 id|salary|track|||hired|hired
 1|600|null|null|null|null|$default
+=======
+id|username|Password|phone|name|email|photo|created_at
+1|Ahmed|iti|NULL|Ahmed|ahmed@gmail.com|NULL|NULL
+2|kokyyyyyyyy|it|NULL|null|loly@yahoo.com|NULL|2018-01-18 16:10:56
+3|ali1234|iti|NULL|NULL|ali@gmail.com|NULL|2018-01-18 16:43:20
+4|ali1234|bn|NULL|NULL|ali@gmail.com|NULL|2018-01-18 16:46:15
+5|ali1234|it|NULL|NULL|ali@gmail.com|NULL|2018-01-18 18:04:55
+6|monicaaa|mL|NULL|NULL|ali@gmail.com|NULL|2018-01-18 18:06:07
+7|Monica|123|NULL|NULL|monica@gmail.com|NULL|2018-02-04 01:46:39
+8|Nonnnaaa|000|NULL|NULL|monica@gmail.com|null|2018-02-05 19:04:14
+9|monica|000|NULL|NULL|loly@yahoo.com|NULL|2018-02-07 05:31:28
+
+>>>>>>> master
