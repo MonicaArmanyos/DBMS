@@ -8,7 +8,9 @@ create_DB()
 {
 	read -p "Database name: " db
 	if test -d $db
+
 	then echo "Couldn't create database. Database already exits!"
+
 	else
 		mkdir $db
 		if test -d $db
@@ -20,7 +22,7 @@ create_DB()
 	fi
 }
 
-#####################################################
+###############################################
 
 drop_DB()
 {
@@ -61,7 +63,7 @@ add_column(){
 			read -p "Data type: " data_type
 		done
 	
-		read -p "Constrains? 'unique/not-null/default=value'(type constrains separted by spaces): " constrains
+		read -p "Constrains? 'UNIQUE/NOTNULL'(type constrains separted by spaces): " constrains
 		read -p	"Default value: " default
 
 		sed -i "1s/$/|$col_name/" $table_name
@@ -132,7 +134,7 @@ edit_column(){
 			read -p "Data type: " data_type
 		done
 
-		read -p "Constrains? 'unique/not-null/default=value'(type constrains separted by spaces): " constrains
+		read -p "Constrains? 'UNIQUE/NOTNULL'(type constrains separted by spaces): " constrains
 		read -p	"Default value: " default
 		sed -i "s/^$col_name.*$/$new_col_name|$data_type|$constrains|$default/g" ".$table_name"	
 		sed -i "s/$col_name/$new_col_name/g" "$table_name"	
@@ -163,7 +165,7 @@ drop_column(){
 
 		column_num=`awk -F'|' -v col_name=$col_name '{ for(i=1;i<=NF;i++) { if($i == col_name){ print i } } }' "$table_name"`
 
-		cut -d"|" -f-1,$((column_num - 1)),$((column_num + 1))- "$table_name" > tmp
+		cut -d"|" -f-$((column_num - 1)),$((column_num + 1))- "$table_name" > tmp
 		cat tmp > $table_name
 		rm tmp
 		
@@ -273,6 +275,8 @@ alter_table(){
 
 delete_record(){
 
+	match_flag=0
+
 	read -p "Table name: " table_name
 
 	while test "$table_name" == ""
@@ -283,29 +287,53 @@ delete_record(){
 
 	if test -f $table_name
 	then
-		read -p "Column: " col_name
+		
+		#sed -i "/$col_name|/d" ".$table_name"
+		
+		read -p "certain value or regex? (type 'r' for regex or 'c' for certain value): " mode
 
-		while test "$col_name" == ""
-		do	
-			echo "Please enter column name!"
-			read -p "Column: " col_name
+		while test "$mode" == ""
+		do
+			read -p "certain value or regex? (type 'r' for regex or 'c' for certain value): " mode
 		done
 
-		read -p "Value: " value
+		if test $mode == "r"
+		then
+			awk -F'|' 'BEGIN {j=1} { if(NR == 1) { for(i = 1; i <= NF; i++) { print j" " $i;j++; } } }' "$table_name"
+			read -p "Enter columns numbers separated by spaces to match with the pattern: " columns
+			read -p "Enter pattern: " pattern
+			matched_rows=()
+			for col in $columns
+			do
+				matched_rows+=`awk -F'|' -v col=$col -v pat=$pattern '$col ~ pat { print } ' "$table_name"`
+				matched_rows+=" "
+			done
+			for row in $matched_rows
+			do
+			 	sed -i "/$row/d" "$table_name"
+				match_flag=1
+			done	
+		fi
 
-		while test "$value" == ""
-		do	
-			echo "Please enter value!"
-			ead -p "Value: " value
-		done
-		sed -i "/$col_name|/d" ".$table_name"
+		if test $mode == "c"
+		then
+			awk -F'|' 'BEGIN {j=1} { if(NR == 1) { for(i = 1; i <= NF; i++) { print j" " $i;j++; } } }' "$table_name"
+			read -p "Enter columns numbers separated by spaces to match with the value: " columns
+			read -p "Enter value: " value
+			matched_rows=()
+			for col in $columns
+			do
+				matched_rows+=`awk -F'|' -v col=$col -v value=$value '{ if($col == value) { print } } ' "$table_name"`
+				matched_rows+=" "
+			done
+			for row in $matched_rows
+			do
+		 		sed -i "/$row/d" "$table_name"
+				match_flag=1
+			done
+		fi
 
-		column_num=`awk -F'|' -v col_name=$col_name '{ for(i=1;i<=NF;i++) { if($i == col_name){ print i } } }' "$table_name"`
-		#awk -F'|' -v col_num=$col_num value=$value '{ if ( $col_num == value ) { $0="";print; } }' input_file.Txt > output_file.txt
-
-		cat tmp > $table_name
-		rm tmp
-
+		test $match_flag -eq 0 && echo "No records found" || echo "Records deleted successfully"
 	else
 		echo "Table doesn't exist"
 	fi
@@ -358,6 +386,7 @@ select_record()
                  read -p "Enter format number: " format
 			case $format in
 			1)
+			echo -n "" > ../../disp.csv
 			j=0
 			b=()
 			for i in ${fields[@]}
@@ -373,14 +402,15 @@ select_record()
 			k=i
 			while test $m -lt $j
 			do
-		 	echo -n ${b[$k]} "," 
+		 	echo -n ${b[$k]} "," >> ../../disp.csv 
 			
 			(( k+=$rows ))
 			(( m++ ))
-			done
-			echo
+			done 
+			echo >> ../../disp.csv
 			(( i++ ))
 			done
+			cat  ../../disp.csv
 			;;
 			2)
 			echo "<html><body><table border="1"> <tr>" > ../../display.html
@@ -426,6 +456,7 @@ select_record()
 
                         case $format in
                         1)
+			echo -n "" > ../../disp.csv
                         j=0
                         b=()
                         for i in ${fields[@]}
@@ -441,13 +472,14 @@ select_record()
                         k=i
                         while test $m -lt $j
                         do
-                        echo -n ${b[$k]} "," 
+                        echo -n ${b[$k]} "," >> ../../disp.csv 
                         (( k+=$rows ))
                         (( m++ ))
                         done
-                        echo
+                        echo >> ../../disp.csv
                         (( i++ ))
                         done
+			cat ../../disp.csv
                         ;;
                         2)
                         echo "<html><body><table border="1"> <tr>" > ../../display.html
@@ -907,7 +939,6 @@ done
 fi
 }
 
-
 ###############################################
 
 displayTable(){
@@ -1043,5 +1074,6 @@ main_menu(){
 
 cd $DBMS_DIR
 main_menu
+
 
 
