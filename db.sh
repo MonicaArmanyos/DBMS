@@ -633,16 +633,24 @@ sort_table()
                  } } END { print "+---------------------------------+"}' $table
 
                 read -p "Enter field number to sort according to :" field
-                 b=`awk -va="$field" 'BEGIN { FS="|"} { if(NR == a+1) print $2 }' .$table`
+                 b=`awk -va="$field" 'BEGIN { FS="|"} {  if(NR == a+1) print $2 }' .$table`
+		 c=`awk -va="$field" 'BEGIN { FS="|"} 	END {  if(NR < a+1) {print "invalid"}  else {print ""} }' .$table`
+		while [[ $c == "invalid" ]]
+		do
+		echo " Field not exist!"
+                read -p "Enter field number to sort according to :" field
+	        c=`awk -va="$field" 'BEGIN { FS="|"}   END {  if(NR < a+1) {print "invalid" }  else {print ""} }' .$table`
+		b=`awk -va="$field" 'BEGIN { FS="|"} {  if(NR == a+1) print $2 }' .$table`
+		done
                 case $option in
                 1)
                         awk '{ if(NR == 1) print }' $table
-                        echo
+            
                         if [ $b == "str" ]
                         then
                         tail -n +2 $table | sort   -t "|" -k $field
                         else
-
+			echo 
                          tail -n +2 $table | sort -n  -t "|" -k $field
                         fi
                         ;;
