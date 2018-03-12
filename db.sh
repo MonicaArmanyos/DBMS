@@ -763,7 +763,8 @@ add_record(){
 			fi
 			if [[ $defult == "" ]] 
 			then
-				echo "this field has no default value"
+				#echo "this field has no default value"
+				echo ""
 			else
 				if [[ $val == "" ]]
 				then
