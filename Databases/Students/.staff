@@ -1,2 +1,7 @@
-Field|Type|Constrains|Default
-id|hgjhj|PK
+Field|Type|constrains|default
+id|int|PK
+name|string||
+1|int||os
+ugyh|ii||
+waho|ii||
+

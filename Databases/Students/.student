@@ -1,0 +1,9 @@
+Field|Type|constrains|default
+id|int|PK
+username|str||
+Password|str||
+phone|str||
+name|str||
+email|str||
+photo|str||
+created_at|str||
