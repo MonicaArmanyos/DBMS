@@ -55,12 +55,18 @@ add_column(){
 		echo "Can't add column. Already exists!"
 
 	else 
-		read -p "Data type: " data_type
+		read -p "Data type (type int or str):" data_type
 
 		while test "$data_type" == ""
 		do	
 			echo "Column data type can't be empty!"
-			read -p "Data type: " data_type
+			read -p "Data type (type int or str):" data_type
+		done
+
+		while ! [[ "$data_type" == "int" || "$data_type" == "str" ]]
+		do	
+			echo "Not valid data type!"
+			read -p "Data type (type int or str):" data_type
 		done
 	
 		read -p "Constrains? 'UNIQUE/NOTNULL'(type constrains separted by spaces): " constrains
@@ -89,12 +95,18 @@ add_primary(){
 		read -p "Primary key name: " col_name
 	done
 
-	read -p "Data type: " data_type
+	read -p "Data type (type int or str):" data_type
 
 	while test "$data_type" == ""
 	do	
 		echo "Primary key data type can't be empty!"
 		read -p "Data type: " data_type
+	done
+
+	while ! [[ "$data_type" == "int" || "$data_type" == "str" ]]
+	do	
+		echo "Not valid data type!"
+		read -p "Data type (type int or str):" data_type
 	done
 
 	echo "$col_name|$data_type|PK" >> .$table_name
@@ -132,6 +144,12 @@ edit_column(){
 		do	
 			echo "Column data type can't be empty!"
 			read -p "Data type: " data_type
+		done
+
+		while ! [[ "$data_type" == "int" || "$data_type" == "str" ]]
+		do	
+			echo "Not valid data type!"
+			read -p "Data type (type int or str):" data_type
 		done
 
 		read -p "Constrains? 'UNIQUE/NOTNULL'(type constrains separted by spaces): " constrains
