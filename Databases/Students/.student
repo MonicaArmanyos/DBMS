@@ -1,9 +1,3 @@
-Field|Type|constrains|default
+Field|Type|Constrains|Default
 id|int|PK
-username|str||
-Password|str||
-phone|str||
 name|str||
-email|str||
-photo|str||
-created_at|str||
