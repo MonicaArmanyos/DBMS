@@ -598,41 +598,52 @@ drop_table()
 
 sort_table()
 {
-	read -p "Enter table name :" table
-	if test -f $table
-	then
-		echo "+------------Sort------------+"
-		echo "|1.Ascendingly               |"
-		echo "|2.Decendingly               |"
-		echo "+----------------------------+"
-		read -p "Choose option number :" option
+	
+	        read -p "Enter table name :" table
+        if test -f $table
+        then
+                echo "+------------Sort------------+"
+                echo "|1.Ascendingly               |"
+                echo "|2.Decendingly               |"
+                echo "+----------------------------+"
+                read -p "Choose option number :" option
                 awk 'BEGIN { FS="|";print "\n+-------------Select--------------+";j=1 } { if(NR == 1) {
                 for(i = 1; i <= NF; i++) { 
                 print j" " $i;
                 j++;
                   }
                  } } END { print "+---------------------------------+"}' $table
-		read -p "Enter field number to sort according to :" field
+                read -p "Enter field number to sort according to :" field
+                 b=`awk -va="$field" 'BEGIN { FS="|"} { if(NR == a+1) print $2 }' .$table`
+                case $option in
+                1)
+                        awk '{ if(NR == 1) print }' $table
+                        echo
+                        if [ $b == "str" ]
+                        then
+                        tail -n +2 $table | sort   -t "|" -k $field
+                        else
 
-		case $option in
-		1)
-			awk '{ if(NR == 1) print }' $table
+                         tail -n +2 $table | sort -n  -t "|" -k $field
+                        fi
+                        ;;
+                2)
+                        awk '{ if(NR == 1) print }' $table
+                        echo
+                        if [ $b == "str" ]
+                        then
+                         tail -n +2 $table | sort -r  -t "|" -k $field
+                        else
+                         tail -n +2 $table | sort -nr  -t "|" -k $field
+                        fi
+                        ;;
+                *) echo "Invalid option"
+                esac
 
-			tail -n +2 $table | sort   -t "|" -k $field 
-			;;
-		2)
-			awk '{ if(NR == 1) print }' $table
-			echo
+        else
+                echo "Sorry, table not found"
+        fi
 
-			 tail -n +2 $table | sort -r  -t "|" -k $field 
-			;;
-		*) echo "Invalid option"
-		esac
-
-	else
-		echo "Sorry, table not found"
-	fi
-	
 }
 
 ######################################################  
