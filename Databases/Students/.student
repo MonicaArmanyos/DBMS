@@ -1,0 +1,4 @@
+Field|Type|Constrains|Default
+id|int|PK
+username|str||
+email|str||
