@@ -1,4 +1,3 @@
-id ,username ,email ,
-1 ,"monica" ,"monica@gmail.com" ,
-11 ,"samar" ,"samar50@gmail.com" ,
-2 ,"iman" ,null ,
+id ,name ,
+1 ,"monica" ,
+2 ,null ,
