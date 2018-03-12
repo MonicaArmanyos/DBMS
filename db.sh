@@ -631,7 +631,7 @@ add_record(){
 			read -p "Enter the value of $colName ($colType):" val
 			done
 			else
-			while ! [[ $val =~ ^[A-Za-z][A-Za-z0-9]*$ || $val =~  ^$  ]]
+			while ! [[ $val =~ ^[A-Za-z][A-Za-z0-9_@.]+$ || $val =~  ^$  ]]
 			do
 			echo "invalid datatype"
 			read -p "Enter the value of $colName ($colType):" val
@@ -711,13 +711,13 @@ add_record(){
 				fi
 				((n++))
 			done
-			#if [[ $colKey == "" ]]
-			#then
-				
-			#fi
 			fi
 			((l++))
 			done
+                         if [[ $val == "" ]]
+			then
+				val="null"
+			fi
 			if [[ $defult == "" ]] 
 			then
 				echo "this field has no default value"
@@ -753,18 +753,24 @@ updateTable() {
  if  [ ! -f $tableName ]
      then
     echo "Table $tableName does not  existed ,choose another Table"
-  fi
+ else
+read -p  "Enter Condition Column name: " colCond
 fieldsNum=`awk 'BEGIN{FS="|"} {if(NR=='1') print NF}' $tableName`
  j=1
 while [ $j -le $fieldsNum ]
 do
 colname=`awk -v var="$j" 'BEGIN{FS="|"} {if(NR=='1') print $var}' $tableName`
+if [[ $colCond == $colname ]]
+then
 fNo=$j
+read -p "Enter condition Column val:" valCond
 k=2
 linesNum=`awk 'END{print NR}' $tableName`
 while [ $k -le $linesNum ]
 do
 val=`awk -v varr="$j" 'BEGIN{FS="|";ORS="\n"} {if(NR=='$k') print $varr}' $tableName`
+if [[ $valCond == $val ]]
+then
 read -p  "Enter Column name to set: " colSet
  colsNum=`awk 'END{print NR}' .$tableName`
 l=2
@@ -772,7 +778,8 @@ while [ $l -le $colsNum ]
 do
 colName=`awk 'BEGIN{FS="|"} {if(NR=='$l') print $1}' .$tableName`
 colType=`awk 'BEGIN{FS="|"}{if(NR=='$l') print $2}' .$tableName`
-colKey=`awk 'BEGIN{FS="|"}{if(NR=='$l') print $3}' .$tableName`
+constrainsNo=`awk 'BEGIN{FS="|"}{if(NR=='$l') print $3}' .$tableName | awk -F" "  "{ print NF }"`
+defult=`awk 'BEGIN{FS="|"} {if(NR=='$l') print $4}' .$tableName`
 if [[ $colSet == $colName ]]
 then
 setfNo=$l
@@ -785,12 +792,17 @@ echo "invalid datatype"
 read -p "Enter new value to set $colName ($colType): " newVal
 done
 else
- while ! [[ $newVal =~ ^[A-Za-z][A-Za-z0-9]*$  ]]
+ while ! [[ $newVal =~ ^[A-Za-z][A-Za-z0-9_@.]+$ || $newVal =~  ^$  ]]
 do
 echo "invalid datatype"
 read -p "Enter new value to set $colName ($colType): " newVal
 done
 fi
+v=1
+while [ $v -le $constrainsNo ]
+do
+colKey=`awk 'BEGIN{FS="|"}{if(NR=='$l') print $3}' .$tableName | awk -v varky="$v" 'BEGIN{FS=" "} { print $varky}'`
+
 if [[ $colKey == "PK" ]]
  then
 fieldsNo=`awk 'BEGIN{FS="|"} {if(NR=='1') print NF}' $tableName`
@@ -809,6 +821,7 @@ if [[ $newVal == $oldVal ]]
 then
 echo "sorry it is primary key, dublicated value"
 read -p "Enter new value to set $colName ($colType): " newVal
+x=1
 fi
 ((x++))
 done
@@ -816,17 +829,84 @@ fi
 ((n++))
 done
 fi
-read -p "Enter value to be updated: " old_val
-result=$(cat $tableName | grep "$old_val")
-update=$(sed -i 's/'$old_val'/'$newVal'/g' $tableName)
+if [[ $colKey == "NOTNULL" ]]
+ then
+while [[ $newVal == "" ]]
+do
+echo "sorry it is, not accept null value"
+read -p "Enter new value to set $colName ($colType): " newVal
+done
+fi
+if [[ $colKey == "UNIQUE" ]]
+then
+feldsNum=`awk 'BEGIN{FS="|"} {if(NR=='1') print NF}' $tableName`
+d=1
+while [ $d -le $feldsNum ]
+do
+colnaame=`awk -v varn="$d" 'BEGIN{FS="|"} {if(NR=='1') print $varn}' $tableName`
+if [[ $colName == $colnaame ]]
+then
+t=2
+linesNu=`awk 'END{print NR}' $tableName`
+while [ $t -le $linesNu ]
+do
+oldval=`awk -v varrv="$d" 'BEGIN{FS="|";ORS="\n"} {if(NR=='$t') print $varrv}' $tableName`
+if [[ $newVal == $oldval ]]
+then
+echo "sorry it is unique key, dublicated value"
+read -p "Enter new value to set $colName ($colType): " newVal
+t=1
+fi
+((t++))
+done
+fi
+((d++))
+done
+fi
+((v++))
+done
+if [[ $newVal == "" ]]
+then
+newVal="null"
+fi
+if [[ $defult == "" ]]
+then
+echo "this field has no default value"
+else
+if [[ $newVal == "" ]]
+then
+newVal=$defult
+fi
+fi
 fi
 ((l++))
 done
+rowNO=`awk 'BEGIN{FS="|"}{if ($'$fNo' == "'$val'") print NR}' $tableName`
+colsNo=`awk 'BEGIN{FS="|"} {if(NR=='1') print NF}' $tableName`
+y=1
+while [ $y -le $colsNo ]
+do
+colnam=`awk -v vary="$y" 'BEGIN{FS="|"} {if(NR=='1') print $vary}' $tableName`
+if [[ $colSet == $colnam ]]
+then
+for h in $rowNO
+do
+old_val=`awk -v vard="$y" 'BEGIN{FS="|"} {if(NR=='$h') print $vard}' $tableName`
+update=$(sed -i ''$h's/'$old_val'/'$newVal'/g' $tableName) 
+done
+echo "data updated successfully"
+fi
+((y++))
+done
+fi
 ((k++))
 done
+fi
 ((j++))
 done
+fi
 }
+
 
 ###############################################
 
