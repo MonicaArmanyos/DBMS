@@ -663,7 +663,7 @@ add_record(){
 			read -p "Enter the value of $colName ($colType):" val
 			done
 			else
-			while ! [[ $val =~ ^[A-Za-z][A-Za-z0-9_@.]+$ || $val =~  ^$  ]]
+			while ! [[ $val =~ ^\".+\"$ || $val =~  ^$  ]]
 			do
 			echo "invalid datatype"
 			read -p "Enter the value of $colName ($colType):" val
@@ -824,7 +824,7 @@ echo "invalid datatype"
 read -p "Enter new value to set $colName ($colType): " newVal
 done
 else
- while ! [[ $newVal =~ ^[A-Za-z][A-Za-z0-9_@.]+$ || $newVal =~  ^$  ]]
+ while ! [[ $newVal =~ ^\".+\"$ || $newVal =~  ^$  ]]
 do
 echo "invalid datatype"
 read -p "Enter new value to set $colName ($colType): " newVal
