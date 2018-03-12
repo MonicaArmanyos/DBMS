@@ -8,11 +8,9 @@ create_DB()
 {
 	read -p "Database name: " db
 	if test -d $db
-<<<<<<< HEAD
+
 	then echo "Couldn't create database. Database already exits!"
-=======
-	then echo "Couldn't create database.Database already exits!"
->>>>>>> Monica
+
 	else
 		mkdir $db
 		if test -d $db
